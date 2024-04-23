@@ -27,9 +27,27 @@ def load_mnist(batch_size=64): # load_mnist라는 이름의 함수를 정의하�
     builtins.train_loader = torch.utils.data.DataLoader(data_train,batch_size=batch_size) # 학습 데이터셋을 데이터 로더에 로드합니다. 데이터 로더는 데이터셋을 지정된 배치 크기에 맞게 나누고, 이를 반복 가능한 객체로 만들어 학습 과정에서 쉽게 사용할 수 있게 도움
     builtins.test_loader = torch.utils.data.DataLoader(data_test,batch_size=batch_size)
 
+def load_fashion_mnist(batch_size=64): # batch_size 매개변수를 64로 설정합니다. 이 매개변수는 데이터를 얼마나 많은 단위로 나눌지 결정
+    # torchvision.datasets.FashionMNIST를 사용하여 Fashion MNIST 데이터셋을 불러옴. './data'는 데이터셋이 저장될 경로
+    builtins.data_train = torchvision.datasets.FashionMNIST('./data', 
+        download=True, train=True, transform=ToTensor())
+    # download=True는 해당 경로에 데이터가 없을 경우 인터넷에서 자동으로 다운로드하도록 설정.
+    # train=True는 학습용 데이터셋을 불러오는 것을 의미하고, transform=ToTensor()는 데이터셋의 이미지들을 파이토치 텐서로 변환하는 함수를 적용
+    # Tensor 형식 : 픽셀의 밝기 값을 포함하는 다차원 배열 (0과 1 사이의 값으로 정규화)
+    # builtins 모듈은 파이썬 내장 모듈로, 파이썬의 모든 네임스페이스에서 접근할 수 있는 변수나 함수를 저장하는 곳이다.
+    # 따라서 load_fashion_mnist 함수를 호출한 후에는 data_train과 
+    builtins.data_test = torchvision.datasets.FashionMNIST('./data',
+        download=True, train=False, transform=ToTensor())
+    # 테스트 데이터셋을 불러오는 코드입니다. train=False로 설정하여 학습용이 아닌 테스트용 데이터셋을 불러옴
+    builtins.train_loader = torch.utils.data.DataLoader(data_train, batch_size=batch_size)
+    # 학습 데이터셋을 데이터 로더에 로드합니다. 데이터 로더는 데이터셋을 지정된 배치 크기에 맞게 나누고, 이를 반복 가능한 객체로 만들어 학습 과정에서 쉽게 사용할 수 있게 도움
+    builtins.test_loader = torch.utils.data.DataLoader(data_test, batch_size=batch_size)
+    
+
 # 신경망을 한 에폭(epoch) 동안 학습하는 과정을 구현한 Python 함수
 # 이 함수는 모델을 학습시키고, 각 배치에서의 평균 손실과 정확도를 계산하여 반환하는데 이를 통해 학습 과정을 모니터링할 수 있음
 
+# # # # lr= 0.01 이런거나 optimizer를 조작할 수도 있음
 def train_epoch(net,dataloader,lr=0.01,optimizer=None,loss_fn = nn.NLLLoss()): # 이 함수는 여러 매개변수를 받는데, net은 학습할 신경망 모델, dataloader는 데이터 로더, lr은 학습률(기본값 0.01), optimizer는 최적화 도구(기본값은 None), loss_fn은 손실 함수로 기본적으로 Negative Log Likelihood Loss를 사용
     optimizer = optimizer or torch.optim.Adam(net.parameters(),lr=lr) # 최적화 도구가 제공되지 않았다면, Adam 최적화 도구를 사용하여 신경망의 매개변수를 최적화하며, 학습률은 lr로 설정
     net.train() # 모델을 학습 모드로 설정합니다. 이는 일부 신경망 계층(예: 드롭아웃 계층)이 학습과 평가 모드에서 다르게 동작하기 때문에 필요
@@ -177,18 +195,3 @@ def common_transform(): # common_transform이라는 이름의 함수를 정의�
             std_normalize]) # 정규화 변환을 적용
     return trans # 구성된 변환 파이프라인을 반환
 
-# 개와 고양이의 이미지 데이터셋을 불러오고, 처리하여 학습 및 테스트 데이터셋으로 분할하는 Python 함수 load_cats_dogs_dataset를 정의하는데 함수는 데이터셋을 압축 해제하고, 이미지를 검사하며, 데이터를 분할하고, 로더를 설정하는 여러 단계로 구성
-
-def load_cats_dogs_dataset(): # load_cats_dogs_dataset라는 이름의 함수를 정의합니다. 이 함수는 매개변수를 받지 않음
-    if not os.path.exists('data/PetImages'): # 지정된 경로에 'PetImages' 폴더가 존재하는지 확인합니다. 폴더가 없으면 다음 단계로 이동
-        with zipfile.ZipFile('data/kagglecatsanddogs_5340.zip', 'r') as zip_ref: # 'kagglecatsanddogs_5340.zip'라는 이름의 압축 파일을 읽기 모드로 열고 zip_ref 객체로 참조
-            zip_ref.extractall('data') # zip_ref 객체를 사용하여 압축 파일 내의 모든 내용을 'data' 디렉토리에 압축 해제
-
-    check_image_dir('data/PetImages/Cat/*.jpg') # 'data/PetImages/Cat' 폴더 내의 모든 '.jpg' 파일을 검사하여 손상된 이미지가 있는지 확인하고, 손상된 이미지는 삭제
-    check_image_dir('data/PetImages/Dog/*.jpg') # 'data/PetImages/Dog' 폴더 내의 모든 '.jpg' 파일도 동일하게 검사
-
-    dataset = torchvision.datasets.ImageFolder('data/PetImages',transform=common_transform()) # ImageFolder 클래스를 사용하여 'data/PetImages' 디렉토리의 이미지들을 로드하고 common_transform() 함수를 호출하여 이미지에 적용할 변환을 설정
-    trainset, testset = torch.utils.data.random_split(dataset,[20000,len(dataset)-20000]) # 데이터셋을 무작위로 20,000개의 학습 셋과 나머지를 테스트 셋으로 분할
-    trainloader = torch.utils.data.DataLoader(trainset,batch_size=32) # 학습 데이터셋에 대한 데이터 로더를 생성하고, 배치 크기를 32로 설정
-    testloader = torch.utils.data.DataLoader(testset,batch_size=32) # 테스트 데이터셋에 대한 데이터 로더를 생성하고, 배치 크기를 32로 설정
-    return dataset, trainloader, testloader # 완성된 데이터셋과 데이터 로더들을 반환
